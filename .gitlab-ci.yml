@@ -1,0 +1,27 @@
+stages:
+    - build
+    - deploy_test
+    - deploy_prod
+
+job_build:
+    stage: build
+    script:
+        - docker build -t reg.istry.cz/skolenigitcz-$CI_PIPELINE_ID .
+        - docker push reg.istry.cz/skolenigitcz-$CI_PIPELINE_ID
+
+job_deploy_test:
+    stage: deploy_test
+    script:
+        - docker run -v /root/:/root docker:git ssh test docker run -l traefik.frontend.rule=Host:skolenigitcz-$CI_PIPELINE_ID.swarm.xsika.cz,skolenigitcz-$CI_COMMIT_REF_NAME.swarm.xsika.cz --net traefik_webgateway -d reg.istry.cz/skolenigitcz-$CI_PIPELINE_ID
+        - echo skolenigitcz-$CI_PIPELINE_ID.swarm.xsika.cz
+        - echo skolenigitcz-$CI_COMMIT_REF_NAME.swarm.xsika.cz
+        - echo skolenigitcz.swarm.xsika.cz
+
+job_deploy_prod:
+    stage: deploy_prod
+    when: manual
+    script:
+        - docker run -v /root/:/root docker:git ssh prod docker run -l traefik.frontend.rule=Host:skolenigitcz.swarm.xsika.cz,skoleni-git.cz,www.skoleni-git.cz --net traefik_webgateway -d reg.istry.cz/skolenigitcz-$CI_PIPELINE_ID
+        - echo skolenigitcz.swarm.xsika.cz
+        - echo skoleni-git.cz
+
